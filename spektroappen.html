@@ -323,6 +323,25 @@
   .gal-ok{color:#8fd9a8;}
   .gal-nod{color:var(--muted2);}
   .gal-dist{color:var(--muted2);}
+
+  .pane-ff{padding:5px 9px;font-size:12px;}
+  body.ff-on{overflow:hidden;}
+  #ffWrap{position:fixed;inset:0;z-index:900;background:var(--bg);overflow:auto;padding:10px 14px;box-sizing:border-box;}
+  #ffWrap[hidden]{display:none;}
+  #ffInner{display:flex;flex-direction:column;gap:8px;}
+  #ffBar{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);}
+  #ffInner .pane{margin:0;}
+  .aj-heads{display:flex;align-items:center;gap:0;margin-top:2px;}
+  .aj-head{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:0 6px;}
+  .aj-head.left{justify-content:flex-end;}
+  .aj-head select{max-width:230px;}
+  .aj-midhead{flex:0 0 auto;text-align:center;font-size:12px;color:var(--accent);font-weight:600;}
+  .aj-strip{display:flex;align-items:flex-start;min-width:0;}
+  .aj-side{flex:1 1 0;min-width:0;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;display:flex;}
+  .aj-side .gal-inner{flex:0 0 auto;}
+  .aj-side.left .gal-inner{margin-left:auto;}
+  .aj-mid{flex:0 0 auto;position:relative;z-index:1;box-shadow:-3px 0 0 var(--accent),3px 0 0 var(--accent);}
+  .aj-empty{font-size:12px;color:var(--muted2);padding:30px 10px;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -391,6 +410,7 @@
       <button class="btn" data-pane="cont">Pulskonturer</button>
       <button class="btn" data-pane="scat">Punktdiagram</button>
       <button class="btn" data-pane="gal">Pulsgalleri</button>
+      <button class="btn" data-pane="aj">Artjämförelse</button>
     </div>
     <div class="divider-v"></div>
     <div class="group unitpick">
@@ -400,7 +420,7 @@
     </div>
     <div class="spacer"></div>
     <div class="viewlabel" id="viewLabel">Ingen fil inladdad</div>
-    <button class="btn iconbtn" id="keysHelpBtn" title="Tangentbordskommandon:&#10;+ / − : zooma in/ut&#10;← / → : panorera (Shift = större steg)&#10;Home / End : hoppa till start/slut&#10;N / F : nästa/föregående fil i mappen&#10;Z : zooma (till markeringen, annars: dra en markering så zoomas den in)&#10;1 / 2 / 3 : Markering / Puls / Panorera&#10;4 eller T : Tidsmarkör&#10;K : sätt knä (Fk) – nästa klick&#10;L : sätt häl (FMk) – nästa klick&#10;S eller Enter : spara puls/markering&#10;Mellanslag : spela / pausa&#10;Esc : rensa markering&#10;[ / ] : föregående/nästa sparade puls&#10;H : dölj vald puls i jämförelsevyerna&#10;G : gruppera markerade pulser till strof">⌨</button>
+    <button class="btn iconbtn" id="keysHelpBtn" title="Tangentbordskommandon:&#10;+ / − : zooma in/ut&#10;← / → : panorera (Shift = större steg)&#10;Home / End : hoppa till start/slut&#10;N / F : nästa/föregående fil i mappen&#10;Z : zooma (till markeringen, annars: dra en markering så zoomas den in)&#10;1 / 2 / 3 : Markering / Puls / Panorera&#10;4 eller T : Tidsmarkör&#10;K : sätt knä (Fk) – nästa klick&#10;L : sätt häl (FMk) – nästa klick&#10;S eller Enter : spara puls/markering&#10;Mellanslag : spela / pausa&#10;Esc : rensa markering (i fullram: nästa Esc stänger)&#10;Q : fullram för visningen i stora rutan&#10;[ / ] : föregående/nästa sparade puls&#10;H : dölj vald puls i jämförelsevyerna&#10;G : gruppera markerade pulser till strof">⌨</button>
   </div>
   <div class="hint" id="toolHint" style="margin:-4px 0 10px;">Dra över spektrogrammet för att markera ett tids-/frekvensområde. Ger Dur, BW och FME (frekvens med högst energi).</div>
   <div class="pulse-points" id="pulsePointBar" style="display:none;">
@@ -459,6 +479,7 @@
           <option value="grayscale">Gråskala (mörk bakgrund)</option>
           <option value="grayscale_white">Gråskala (vit bakgrund)</option>
           <option value="redscale_white">Rödskala (vit bakgrund)</option>
+          <option value="rainbow_white">Regnbåge (vit bakgrund)</option>
         </select>
       </div>
 
@@ -535,6 +556,7 @@
       </div>
       <div class="small-row"><div class="slot" id="slotA"></div><div class="slot" id="slotB"></div></div>
       <div class="slot-full" id="slotC"></div>
+      <div class="slot-full" id="slotD"></div>
 
       <div class="pane" id="paneGal">
         <div class="pane-head">
@@ -551,6 +573,7 @@
             <label class="inl" title="Per ruta: varje ruta normaliseras mot sin egen topp (rekommenderas – inspelningsnivåer skiljer sig). Gemensam: samma dB-skala i alla rutor.">Färgskala
               <select id="galNorm"><option value="tile" selected>per ruta</option><option value="shared">gemensam</option></select></label>
             <label class="inl"><input type="checkbox" id="galPts" /> Mätpunkter</label>
+            <button class="btn ghost pane-ff" data-ff="gal" title="Fullram – fyller webbläsarfönstret (Q). Stäng med Esc.">⛶ Fullram</button>
             <button class="btn ghost pane-big" data-pane="gal">⤢ Stor ruta</button>
           </div>
         </div>
@@ -570,11 +593,43 @@
         <div class="hint">Pulserna visas i följd i ett gemensamt spektrogram med samma tidsskala och frekvensaxel; marginalen skiljer dem åt. Den granskade står fast till vänster – rulla i sidled för att se fler referenser. Knapparna ovan tänder och släcker arter bara i galleriet. Referenserna är de som uppfyller filtret ovan (och ev. rutan i punktdiagrammet). Klicka på en ruta för att välja pulsen i de andra vyerna; ▶ spelar upp utsnittet i 1/10 hastighet. Spektrogrammen räknas ur ljudfilerna i biblioteket – sekvenser inlästa som enbart json-fil kan inte visas.</div>
       </div>
 
+      <div class="pane" id="paneAj">
+        <div class="pane-head">
+          <h2>Artjämförelse</h2>
+          <div class="pane-tools">
+            <label class="inl">Antal per sida
+              <select id="ajN"><option>6</option><option selected>12</option><option>24</option><option>48</option></select></label>
+            <label class="inl"><input type="checkbox" id="ajPts" /> Mätpunkter</label>
+            <button class="btn ghost pane-ff" data-ff="aj" title="Fullram – fyller webbläsarfönstret (Q). Stäng med Esc.">⛶ Fullram</button>
+            <button class="btn ghost pane-big" data-pane="aj">⤢ Stor ruta</button>
+          </div>
+        </div>
+        <div class="galinfo" id="ajInfo"></div>
+        <div class="gal-durwin" id="ajDurRow">
+          <label for="ajDurW" title="Bara pulser vars Dur ligger inom ± fönstret runt den aktuella pulsens Dur visas.">Dur-fönster ±</label>
+          <input type="range" id="ajDurW" min="0.1" max="5" step="0.1" value="1" />
+          <span class="gal-durval" id="ajDurVal">1,0 ms</span>
+          <span class="gal-durinfo" id="ajDurInfo"></span>
+        </div>
+        <div class="aj-heads">
+          <div class="aj-head left"><span id="ajCntL"></span><select id="ajArtL"></select></div>
+          <div class="aj-midhead" id="ajMidHead">Aktuell puls</div>
+          <div class="aj-head right"><select id="ajArtR"></select><span id="ajCntR"></span></div>
+        </div>
+        <div class="aj-strip" id="ajGrid">
+          <div class="aj-side left" id="ajScrollL"><div class="gal-inner" id="ajInnerL"><div class="gal-cvwrap" id="ajWrapL"><canvas id="ajCvL"></canvas></div><div class="gal-labs" id="ajLabL"></div></div></div>
+          <div class="aj-mid"><div class="gal-cvwrap" id="ajWrapM"><canvas id="ajCvM"></canvas></div><div class="gal-labs" id="ajLabM"></div></div>
+          <div class="aj-side right" id="ajScrollR"><div class="gal-inner" id="ajInnerR"><div class="gal-cvwrap" id="ajWrapR"><canvas id="ajCvR"></canvas></div><div class="gal-labs" id="ajLabR"></div></div></div>
+        </div>
+        <div class="hint">Den aktuella pulsen står i mitten, en art på var sida. Närmast i Dur står närmast mitten; rulla varje sida i sidled. Ingen poängsättning – bara Dur-fönstret styr vilka pulser som visas. Väljer du en art som inte är inläst hämtas den från biblioteket. Fönster, marginal, dynamik och färgskala följer pulsgalleriets inställningar. Klicka på en ruta för att välja pulsen; ▶ spelar upp i 1/10 hastighet.</div>
+      </div>
+
       <div class="pane" id="paneSpec">
         <div class="pane-head">
           <h2>Spektrogram</h2>
           <div class="pane-tools">
             <label class="te-toggle" for="showSavedToggle"><input type="checkbox" id="showSavedToggle" checked /><span>Visa sparade pulser</span></label>
+            <button class="btn ghost pane-ff" data-ff="spec" title="Fullram – fyller webbläsarfönstret (Q). Stäng med Esc.">⛶ Fullram</button>
             <button class="btn ghost pane-big" data-pane="spec">⤢ Stor ruta</button>
           </div>
         </div>
@@ -623,6 +678,7 @@
               <select id="alignSel"><option value="start" selected>start</option><option value="fme">FME</option><option value="knee">knä (Fk)</option><option value="end">slut</option></select></label>
             <label class="inl">Kurva
               <select id="curveSel"><option value="trace" selected>spårad kontur</option><option value="points">mätpunkter</option></select></label>
+            <button class="btn ghost pane-ff" data-ff="cont" title="Fullram – fyller webbläsarfönstret (Q). Stäng med Esc.">⛶ Fullram</button>
             <button class="btn ghost pane-big" data-pane="cont">⤢ Stor ruta</button>
           </div>
         </div>
@@ -647,6 +703,7 @@
             <label class="inl" id="colorByLbl">Färg efter <select id="colorBySel"></select></label>
             <label class="inl" id="clipLbl" title="Gäller när FME ingår i diagrammet (som axel eller färg). Överstyrda inspelningar ger opålitlig FME.">Överstyrda
               <select id="clipSel"><option value="file" selected>uteslut hela filen</option><option value="pulse">uteslut pulsen</option><option value="show">visa</option></select></label>
+            <button class="btn ghost pane-ff" data-ff="scat" title="Fullram – fyller webbläsarfönstret (Q). Stäng med Esc.">⛶ Fullram</button>
             <button class="btn ghost pane-big" data-pane="scat">⤢ Stor ruta</button>
           </div>
         </div>
@@ -741,6 +798,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
   </div>
 </div>
 
+<div id="ffWrap" hidden><div id="ffInner"><div id="ffBar"><span id="ffTitle"></span><button class="btn ghost" id="ffClose" style="padding:4px 10px;font-size:11.5px;">✕ Stäng fullram (Esc)</button></div></div></div>
 <script>
 (function(){
   "use strict";
@@ -752,10 +810,23 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     inferno:        [[0,0,4],[40,11,84],[101,21,110],[159,42,99],[212,72,66],[245,125,21],[250,193,39],[252,255,164]],
     grayscale:      [[6,6,8],[255,255,255]],
     grayscale_white:[[255,255,255],[150,150,150],[60,60,60],[0,0,0]],
-    redscale_white: [[255,255,255],[255,214,178],[240,128,80],[196,48,30],[110,0,0]]
+    redscale_white: [[255,255,255],[255,214,178],[240,128,80],[196,48,30],[110,0,0]],
+    // Regnbåge (vit bakgrund): blått där energin är störst, sedan grönt, gult, orange och rött
+    // utåt, ljusrosa i de svagaste delarna. Fjärde talet = läge på skalan (0–1). Lägena är
+    // valda så att en vanlig puls får ungefär samma färgfördelning som i förebilden: ett tunt
+    // blått centrum, smalt grönt/gult band och en bred röd/orange gloria.
+    rainbow_white:  [[255,255,255,0],[250,218,215,0.25],[240,145,138,0.45],[232,62,46,0.55],[242,140,42,0.635],
+                     [240,234,70,0.70],[140,248,92,0.78],[105,242,160,0.85],[100,226,232,0.885],[42,96,240,0.93],[14,24,178,1]]
   };
   function mapColor(t, stops){
     t = Math.max(0, Math.min(1, t));
+    if (stops[0].length === 4){                    // stopp med egna lägen
+      let i = 0;
+      while (i < stops.length - 2 && t > stops[i + 1][3]) i++;
+      const a = stops[i], b = stops[i + 1];
+      const f = b[3] > a[3] ? (t - a[3]) / (b[3] - a[3]) : 0;
+      return [a[0] + (b[0]-a[0])*f, a[1] + (b[1]-a[1])*f, a[2] + (b[2]-a[2])*f];
+    }
     const n = stops.length - 1;
     const pos = t * n;
     const i = Math.max(0, Math.min(n - 1, Math.floor(pos)));
@@ -957,6 +1028,8 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
   let baseStatusText = '';
 
   let currentSpec = null;
+  let ffPane = null;               // visning i fullram (spec/cont/scat/gal/aj) eller null
+  let ajReady = false;             // artjämförelsen färdigkopplad
   let plotArea = { x: 62, y: 14, w: 0, h: 0 };
   let logScale = false;
 
@@ -1399,7 +1472,8 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     fmeCanvas.style.flex = '0 0 ' + fw + 'px';
     fmeCanvas.style.width = fw + 'px';
     const w = specStack.clientWidth;
-    const h = big ? Math.max(320, Math.min(560, Math.round(w * 0.46))) : Math.max(230, Math.min(340, Math.round(w * 0.62)));
+    let h = big ? Math.max(320, Math.min(560, Math.round(w * 0.46))) : Math.max(230, Math.min(340, Math.round(w * 0.62)));
+    if (ffPane === 'spec') h = Math.max(260, (specCanvas.height || h) + ffExtra());
     [specCanvas, overlayCanvas].forEach(c => {
       c.width = w; c.height = h;
       c.style.width = w + 'px'; c.style.height = h + 'px';
@@ -3474,6 +3548,15 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     const tag = document.activeElement && document.activeElement.tagName;
     const inFormField = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
     if (inFormField) return; // låt vanlig fältnavigering/inmatning fungera ostört
+    if (!(e.ctrlKey || e.metaKey || e.altKey)){
+      // Fullram: Q öppnar/stänger (för visningen i stora rutan). Esc rensar först en markering i
+      // spektrogrammet, nästa Esc stänger fullramen.
+      if (e.key === 'q' || e.key === 'Q'){ e.preventDefault(); if (ffPane) exitFullFrame(); else enterFullFrame(bigPane); return; }
+      if (e.key === 'Escape' && ffPane){
+        const hasMark = ffPane === 'spec' && (selection || currentPulse.start || currentPulse.end || currentPulse.fk || currentPulse.fmk || zoomArmed);
+        if (!hasMark){ e.preventDefault(); exitFullFrame(); return; }
+      }
+    }
 
     if (!currentSpec){
       // inget spektrogram inladdat än – inget att styra
@@ -4814,7 +4897,8 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     canvas.style.width = '100%';
     const W = Math.max(260, wrap.clientWidth);
     const big = pane.classList.contains('is-big');
-    const H = big ? clamp(Math.round(W * 0.48), 340, 560) : clamp(Math.round(W * 0.62), 240, 330);
+    let H = big ? clamp(Math.round(W * 0.48), 340, 560) : clamp(Math.round(W * 0.62), 240, 330);
+    if (ffPane && paneEls[ffPane] === pane) H = Math.max(240, Math.round((parseFloat(canvas.style.height) || canvas.clientHeight || H) + ffExtra()));
     return { W, H };
   }
   function cTicks(a, b, n){
@@ -5408,19 +5492,24 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
   function refreshCompareViews(){ updateFilterUI(); drawContours(); drawScatter(); updateSelInfo(); if (galReady) scheduleGallery(); }
 
   // ---------- byta plats på rutorna ----------
-  const paneEls = { spec: document.getElementById('paneSpec'), cont: document.getElementById('paneCont'), scat: document.getElementById('paneScat'), gal: document.getElementById('paneGal') };
-  const slotBig = document.getElementById('slotBig'), slotA = document.getElementById('slotA'), slotB = document.getElementById('slotB'), slotC = document.getElementById('slotC');
+  const paneEls = { spec: document.getElementById('paneSpec'), cont: document.getElementById('paneCont'), scat: document.getElementById('paneScat'), gal: document.getElementById('paneGal'), aj: document.getElementById('paneAj') };
+  const slotBig = document.getElementById('slotBig'), slotA = document.getElementById('slotA'), slotB = document.getElementById('slotB'), slotC = document.getElementById('slotC'), slotD = document.getElementById('slotD');
   let bigPane = 'spec';
   function arrangePanes(){
     // Stora rutan överst; två små sida vid sida; den fjärde i full bredd under.
     // Pulsgalleriet hamnar i full bredd när det inte är stort, annars spektrogrammet.
-    const rest = ['spec', 'cont', 'scat', 'gal'].filter(k => k !== bigPane);
-    const full = bigPane === 'gal' ? 'spec' : 'gal';
-    const pair = rest.filter(k => k !== full);
+    // Remsorna (pulsgalleri, artjämförelse) och spektrogrammet tar full bredd; konturer och
+    // punktdiagram sida vid sida.
+    if (ffPane) exitFullFrame(true);
+    const rest = ['spec', 'cont', 'scat', 'gal', 'aj'].filter(k => k !== bigPane);
+    let wide = rest.filter(k => k === 'gal' || k === 'aj');
+    let pair = rest.filter(k => k !== 'gal' && k !== 'aj');
+    if (pair.length > 2){ wide = ['spec'].concat(wide); pair = pair.filter(k => k !== 'spec'); }
     slotBig.appendChild(paneEls[bigPane]);
     slotA.appendChild(paneEls[pair[0]]);
     slotB.appendChild(paneEls[pair[1]]);
-    slotC.appendChild(paneEls[full]);
+    slotC.appendChild(paneEls[wide[0]]);
+    slotD.appendChild(paneEls[wide[1]]);
     Object.keys(paneEls).forEach(k => paneEls[k].classList.toggle('is-big', k === bigPane));
     document.querySelectorAll('.bigpick .btn').forEach(b => b.classList.toggle('active', b.dataset.pane === bigPane));
     if (currentSpec) render();
@@ -5429,6 +5518,52 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
   document.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => {
     bigPane = b.dataset.pane; saveViewPrefs(); arrangePanes();
   }));
+
+  // ---------- fullram: en visning fyller webbläsarfönstret ----------
+  // Rutan (och för spektrogrammet raden "Nästa klick sätter", annars filterraden) flyttas in i
+  // en ram över hela fönstret och tillbaka när den stängs. Tangentkommandona fungerar som vanligt.
+  const ffWrap = document.getElementById('ffWrap'), ffInner = document.getElementById('ffInner');
+  const FF_NAMES = { spec: 'Spektrogram', cont: 'Pulskonturer', scat: 'Punktdiagram', gal: 'Pulsgalleri', aj: 'Artjämförelse' };
+  let ffMoved = [];
+  function ffExtra(){
+    if (!ffPane) return 0;
+    return Math.floor(window.innerHeight - 20 - ffInner.getBoundingClientRect().height);
+  }
+  function enterFullFrame(key){
+    if (!paneEls[key]) return;
+    if (ffPane) exitFullFrame(true);
+    ffPane = key;
+    const els = key === 'spec' ? [document.getElementById('pulsePointBar'), paneEls[key]] : [document.getElementById('filterBar'), paneEls[key]];
+    ffMoved = els.map(el => { const ph = document.createComment('ff'); el.parentNode.insertBefore(ph, el); ffInner.appendChild(el); return { el, ph }; });
+    paneEls[key].classList.add('is-big', 'is-ff');
+    document.getElementById('ffTitle').textContent = 'Fullram: ' + FF_NAMES[key] + ' – alla tangentkommandon fungerar. Esc stänger.';
+    ffWrap.hidden = false;
+    document.body.classList.add('ff-on');
+    ffRefresh();
+  }
+  function exitFullFrame(quiet){
+    if (!ffPane) return;
+    const key = ffPane;
+    ffPane = null;
+    ffMoved.forEach(({ el, ph }) => { ph.parentNode.insertBefore(el, ph); ph.remove(); });
+    ffMoved = [];
+    paneEls[key].classList.remove('is-ff');
+    paneEls[key].classList.toggle('is-big', key === bigPane);
+    ffWrap.hidden = true;
+    document.body.classList.remove('ff-on');
+    if (!quiet) ffRefresh();
+  }
+  function ffRefresh(){
+    if (currentSpec) render();
+    refreshCompareViews();
+    // en andra omgång när layouten satt sig, så att höjden fyller fönstret exakt
+    requestAnimationFrame(() => { if (currentSpec) render(); refreshCompareViews(); });
+  }
+  document.querySelectorAll('[data-ff]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.ff;
+    if (ffPane === k) exitFullFrame(); else enterFullFrame(k);
+  }));
+  document.getElementById('ffClose').addEventListener('click', () => exitFullFrame());
 
   // ---------- pulsgalleri: spektrogramutsnitt av granskad puls och referenspulser ----------
   // Varje ruta räknas fram direkt ur ljudet. För referenser läses bara de millisekunder som
@@ -5457,7 +5592,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
 
   function scheduleGallery(){
     clearTimeout(galTimer);
-    galTimer = setTimeout(() => { galTimer = null; renderGallery(); }, 90);
+    galTimer = setTimeout(() => { galTimer = null; renderGallery(); if (ajReady) renderAj(); }, 90);
   }
 
   // Den granskade pulsen/strofen: pulsen du mäter just nu, annars vald puls (strof) i aktuell
@@ -5672,7 +5807,8 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
   //  * Inom kända spannet men utanför vad Barataud + ditt bibliotek har för pulser inom
   //    Dur-fönstret (samma reglage som galleriet, minst 5 pulser) → gult "ovanligt", 0,5 + z²/2.
   //  * Pulstyp: har litteraturen en qcf-rad räknas Barataud- och bibliotekspulser med
-  //    BW ≤ 5 kHz som qcf, övriga mot de andra pulstyperna. Pulsen ska passa EN pulstyp.
+  //    BW ≤ 5 kHz som qcf, övriga mot de andra pulstyperna. Den granskade pulsen typas på
+  //    samma sätt (BW ≤ 5 kHz = qcf) och jämförs bara mot artens rader av samma typ.
   //  * Fk finns bara i ditt bibliotek → utanför ger högst gult.
   //  z = hur långt utanför / ARTENS egen skala för måttet (se speciesScale).
   // Fstart och IPI ingår inte. Knä/inget knä markeras men vägs inte.
@@ -5801,7 +5937,16 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     const lits = LIT_RANGES[art] || null;
     const lib = libR.get(art) || null;
     if (!lits && !baratRows(art) && !lib){ res.noData = true; return res; }
-    const groups = spanGroups(art, lib);
+    // Pulstypen avgörs av den granskade pulsens egen BW: ≤ 5 kHz = qcf, annars inte qcf.
+    // Den jämförs bara mot artens rader av samma typ – aldrig qcf mot icke-qcf.
+    const allGroups = spanGroups(art, lib);
+    const hasQ = allGroups.some(g => g.typ === 'qcf');
+    const tQcf = vals.bw != null ? vals.bw <= QCF_BW : null;
+    let groups = allGroups;
+    if (hasQ && tQcf != null){
+      const same = allGroups.filter(g => (g.typ === 'qcf') === tQcf);
+      if (same.length) groups = same;
+    }
     const td = vals.dur, w = galDurWin();
     let best = null;
     groups.forEach(g => {
@@ -5846,7 +5991,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
       if (!best || pen < best.pen) best = { pen, strong, weak, g };
     });
     res.pen = best.pen; res.strong = best.strong; res.weak = best.weak;
-    if (groups.length > 1 && best.g.typ) res.typ = best.g.typ;
+    if (allGroups.length > 1 && best.g.typ) res.typ = best.g.typ;
     const row = best.g.row;
     // 3. Fk – bara ditt bibliotek (gult).
     if (vals.fk != null && lib && lib.fk){
@@ -5985,7 +6130,8 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     fLo = Math.max(0, Math.floor((fLo - 10000) / 5000) * 5000);
     fHi = Math.ceil((fHi + 10000) / 5000) * 5000;
     const pxPerMs = maxSpan > 0 ? clamp((W - GAL_AXIS_W) / (big ? 4.5 : 6) / maxSpan, 2, 60) : 10;
-    const H = big ? 273 : 169;                     // 30 % högre än tidigare (210 / 130)
+    let H = big ? 273 : 169;                       // 30 % högre än tidigare (210 / 130)
+    if (ffPane === 'gal') H = Math.max(169, Math.round((parseFloat(galTgtCv.style.height) || H) + ffExtra()));
     const segW = (a, b) => Math.max(8, Math.round(((b - a) + 2 * pad) * 1000 * pxPerMs));
     // Canvasens maxbredd: korta av listan om remsan skulle bli för lång.
     let refW = 0, cut = shown.length;
@@ -5996,7 +6142,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     }
     if (cut < shown.length) shown = shown.slice(0, cut);
 
-    const sig = [unitMode, W, big, durW, galLimit, galWinSel.value, galPadSel.value, galDynSel.value, galNormSel.value, galPtsChk.checked,
+    const sig = [unitMode, W, big, H, durW, galLimit, galWinSel.value, galPadSel.value, galDynSel.value, galNormSel.value, galPtsChk.checked,
       colormapSel.value, Array.from(galArtOff).join(','), target ? [target.o.t1, target.o.t2, target.o.f1, target.o.f2, target.o.fk, target.o.fmk, target.st ? target.st.n : 0].join(',') : '-',
       shown.map(u => u.seq.fil + '@' + (u.st ? u.st.tStart : u.o.t1) + (unitClipped(u) ? '!' : '')).join('|'), noAudio].join('#');
     if (sig === galSig){ galHighlight(); return; }
@@ -6251,6 +6397,348 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
   [galWinSel, galPadSel, galDynSel, galNormSel, galPtsChk].forEach(el => el.addEventListener('change', () => { saveViewPrefs(); scheduleGallery(); }));
   galNSel.addEventListener('change', () => { galLimit = +galNSel.value; saveViewPrefs(); scheduleGallery(); });
 
+  // ---------- artjämförelse: aktuell puls i mitten, en art på var sida ----------
+  // Ingen poängsättning: Dur-fönstret (± runt aktuell puls) avgör vilka pulser som visas, och
+  // inom varje sida står den som ligger närmast i Dur närmast mitten. Bara enskilda pulser.
+  // Inga andra filter gäller här. Utsnitten räknas fram som i pulsgalleriet (samma inställningar).
+  const ajEl = id => document.getElementById(id);
+  const ajDurW = ajEl('ajDurW'), ajDurVal = ajEl('ajDurVal'), ajDurInfo = ajEl('ajDurInfo');
+  const ajNSel = ajEl('ajN'), ajPtsChk = ajEl('ajPts'), ajInfo = ajEl('ajInfo'), ajGrid = ajEl('ajGrid');
+  const ajArt = { L: ajEl('ajArtL'), R: ajEl('ajArtR') }, ajCnt = { L: ajEl('ajCntL'), R: ajEl('ajCntR') };
+  const ajCv = { L: ajEl('ajCvL'), M: ajEl('ajCvM'), R: ajEl('ajCvR') };
+  const ajWrap = { L: ajEl('ajWrapL'), M: ajEl('ajWrapM'), R: ajEl('ajWrapR') };
+  const ajLab = { L: ajEl('ajLabL'), M: ajEl('ajLabM'), R: ajEl('ajLabR') };
+  const ajScroll = { L: ajEl('ajScrollL'), R: ajEl('ajScrollR') };
+  const ajInnerEl = { L: ajEl('ajInnerL'), R: ajEl('ajInnerR') };
+  const AJ_AXIS_W = 34;
+  const ajDurWin = () => Math.round(clamp(+ajDurW.value || 1, 0.1, 5) * 10) / 10;
+  const ajShowDur = () => { ajDurVal.textContent = ajDurWin().toFixed(1).replace('.', ',') + ' ms'; };
+  const ajSeqArt = s => (s.meta.art || '').trim() || NO_ART;
+  let ajSel = { L: '', R: '' }, ajToken = 0, ajSig = '', ajTiles = [], ajGeom = null, ajArtsKey = '';
+  const ajMsg = { L: '', R: '' };
+
+  // Aktuell puls: den du mäter, annars vald (eller senast vald) puls i aktuell sekvens.
+  function ajTarget(){
+    if (!curSeq || !monoData) return null;
+    if (toolMode === 'pulse' && currentPulse.start && currentPulse.end && currentSpec){
+      const a = currentPulse.start, b = currentPulse.end;
+      const fp = computeFMEPoint({ t1: a.t, f1: a.f, t2: b.t, f2: b.f });
+      const p = { t1: a.t, f1: a.f, t2: b.t, f2: b.f, fme: fp.f, tFme: fp.t,
+        fk: currentPulse.fk ? currentPulse.fk.f : null, tFk: currentPulse.fk ? currentPulse.fk.t : null,
+        fmk: currentPulse.fmk ? currentPulse.fmk.f : null, tFmk: currentPulse.fmk ? currentPulse.fmk.t : null, live: true };
+      return { seq: curSeq, o: p, nr: editingPulse ? pulseMeasurements.indexOf(editingPulse) + 1 : null, v: k => pulseVal(p, k), target: true, live: true };
+    }
+    let p = null;
+    if (selectedPulse && selectedPulse.seq === curSeq) p = selectedPulse.p;
+    if (p) galLastTarget.pulse = p;
+    else if (galLastTarget.pulse && curSeq.pulses.includes(galLastTarget.pulse)) p = galLastTarget.pulse;
+    if (!p) return null;
+    return { seq: curSeq, o: p, nr: curSeq.pulses.indexOf(p) + 1, v: k => pulseVal(p, k), target: true };
+  }
+  // Inlästa pulser av en art (alla jämförelsesekvenser med ljud, oavsett filter).
+  function ajUnits(art){
+    const out = [];
+    refSeqs.forEach(s => {
+      if ((curSeq && s.fil === curSeq.fil) || ajSeqArt(s) !== art || !hasAudio(s)) return;
+      s.pulses.forEach((p, i) => out.push({ seq: s, o: p, nr: i + 1, v: k => pulseVal(p, k) }));
+    });
+    return out;
+  }
+  // Artlistorna: arterna i biblioteket (när det är inläst), artlistan och inlästa jämförelser.
+  function renderAjArts(){
+    const lib = libScanned ? libArtCounts() : new Map();
+    const loaded = new Map();
+    refSeqs.forEach(s => { if (!(curSeq && s.fil === curSeq.fil)){ const a = ajSeqArt(s); loaded.set(a, (loaded.get(a) || 0) + 1); } });
+    const names = new Set(SPECIES.map(s => s[0]));
+    lib.forEach((n, a) => names.add(a)); loaded.forEach((n, a) => names.add(a));
+    ['L', 'R'].forEach(k => { if (ajSel[k]) names.add(ajSel[k]); });
+    const list = Array.from(names).sort((a, b) => a === NO_ART ? 1 : b === NO_ART ? -1 : a.localeCompare(b, 'sv'));
+    const key = list.map(a => a + ':' + (lib.get(a) || 0) + ':' + (loaded.get(a) || 0)).join('|') + '#' + ajSel.L + '#' + ajSel.R;
+    if (key === ajArtsKey) return;
+    ajArtsKey = key;
+    ['L', 'R'].forEach(k => {
+      ajArt[k].innerHTML = '<option value="">— välj art —</option>' + list.map(a => {
+        const n = loaded.get(a) || 0, m = lib.get(a) || 0;
+        const cnt = n ? ' (' + n + ' inlästa)' : (m ? ' (' + m + ' i biblioteket)' : '');
+        return '<option value="' + esc(a) + '"' + (a === ajSel[k] ? ' selected' : '') + '>' + esc(a) + cnt + '</option>';
+      }).join('');
+    });
+  }
+  // Läs in artens sekvenser från biblioteket om de inte redan är inlästa.
+  async function ajEnsureLoaded(k, art){
+    ajMsg[k] = '';
+    if (!art) return;
+    // Redan inläst och ingen biblioteksmapp vald: använd det som finns, fråga inte efter mapp.
+    if (ajUnits(art).length && !libHandle) return;
+    if (!FS_OK){ if (!ajUnits(art).length) ajMsg[k] = 'Arten är inte inläst (den här webbläsaren kan inte läsa biblioteksmappen).'; return; }
+    try{
+      if (!libHandle && !(await pickLibrary())){ ajMsg[k] = 'Ingen biblioteksmapp vald.'; return; }
+      if (!(await ensureLibPermission(true))){ ajMsg[k] = 'Fick inte åtkomst till biblioteksmappen.'; return; }
+      ajMsg[k] = 'Läser biblioteket …'; scheduleAj();
+      await scanLibrary();
+      const have = new Set(refSeqs.map(s => s.fil));
+      const list = libEntries.filter(e => e.seq && libArtOf(e) === art && !have.has(e.seq.fil) && !(curSeq && e.seq.fil === curSeq.fil));
+      ajMsg[k] = '';
+      if (list.length){ list.forEach(e => addRefSeq(refFromEntry(e), true)); afterRefChange(); }
+      if (!ajUnits(art).length) ajMsg[k] = 'Biblioteket har inga pulser med ljudfil av ' + art + '.';
+    }catch(e){ ajMsg[k] = 'Kunde inte läsa biblioteket: ' + e.message; }
+    scheduleAj();
+  }
+  function scheduleAj(){ ajSig = ''; scheduleGallery(); }
+
+  function renderAj(){
+    const myTok = ++ajToken;
+    const pane = paneEls.aj;
+    const big = pane.classList.contains('is-big');
+    const W = Math.max(300, ajGrid.clientWidth || pane.clientWidth - 24);
+    renderAjArts();
+    const target = ajTarget();
+    const dw = ajDurWin(), td = target ? target.v('dur') : null;
+    const lim = +ajNSel.value;
+    const side = {};
+    ['L', 'R'].forEach(k => {
+      const art = ajSel[k];
+      let us = art ? ajUnits(art) : [];
+      const tot = us.length;
+      if (target && td != null){
+        us = us.filter(u => { const d = u.v('dur'); return d != null && Math.round(Math.abs(d - td) * 10) / 10 <= dw + 1e-9; });
+        us.sort((a, b) => (Math.abs(a.v('dur') - td) - Math.abs(b.v('dur') - td)) || (a.v('dur') - b.v('dur')) || a.seq.fil.localeCompare(b.seq.fil) || (a.nr - b.nr));
+      } else us = [];
+      side[k] = { art, tot, inWin: us.length, shown: us.slice(0, lim) };
+    });
+    const pad = +galPadSel.value / 1000, winMs = +galWinSel.value;
+    let maxSpan = 0, fLo = Infinity, fHi = -Infinity;
+    (target ? [target] : []).concat(side.L.shown, side.R.shown).forEach(u => {
+      const [a, b] = unitSpan(u); maxSpan = Math.max(maxSpan, (b - a) * 1000 + 2 * pad * 1000);
+      const [lo, hi] = unitFreqRange(u); if (lo < fLo) fLo = lo; if (hi > fHi) fHi = hi;
+    });
+    if (!isFinite(fLo)){ fLo = 20000; fHi = 100000; }
+    fLo = Math.max(0, Math.floor((fLo - 10000) / 5000) * 5000);
+    fHi = Math.ceil((fHi + 10000) / 5000) * 5000;
+    const pxPerMs = maxSpan > 0 ? clamp((W - AJ_AXIS_W) / (big ? 5 : 7) / maxSpan, 2, 60) : 10;
+    let H = big ? 273 : 200;
+    if (ffPane === 'aj') H = Math.max(200, Math.round((parseFloat(ajCv.M.style.height) || H) + ffExtra()));
+    const segW = (a, b) => Math.max(8, Math.round(((b - a) + 2 * pad) * 1000 * pxPerMs));
+
+    // Infotexter
+    ajDurInfo.textContent = target ? 'Dur ' + Math.max(0, td - dw).toFixed(1) + '–' + (td + dw).toFixed(1) + ' ms' : 'välj en puls';
+    ['L', 'R'].forEach(k => {
+      const s = side[k];
+      ajCnt[k].textContent = ajMsg[k] ? ajMsg[k] : !s.art ? '' : !target ? s.tot + ' pulser' :
+        s.inWin + ' av ' + s.tot + ' inom fönstret' + (s.inWin > s.shown.length ? ', visar ' + s.shown.length : '');
+    });
+    let info;
+    if (!curSeq) info = 'Ladda en fil och välj en puls i pulslistan.';
+    else if (!target) info = 'Välj en puls i pulslistan (eller mät en) för att jämföra den med två arter.';
+    else info = '<b>Aktuell:</b> ' + (target.live ? 'pulsen du mäter' : 'puls ' + target.nr) + ', Dur ' + td.toFixed(1) + ' ms.' + (ajSel.L && ajSel.R ? '' : ' Välj en art på var sida.');
+    if (unitMode === 'strof') info += ' Artjämförelsen visar alltid enskilda pulser.';
+    info += ' Frekvens ' + (fLo / 1000) + '–' + (fHi / 1000) + ' kHz, linjer var 10 kHz; strecket nere till höger i mitten = 1 ms.';
+    ajInfo.innerHTML = info;
+
+    // Utsnitt: mitten (med frekvensaxel), vänster (närmast i Dur längst till höger) och höger.
+    const segs = [];
+    let midW = AJ_AXIS_W;
+    if (target){
+      const [a, b] = unitSpan(target), w = segW(a, b);
+      segs.push({ u: target, t0: a - pad, t1: b + pad, x: AJ_AXIS_W, w, cv: 'M' });
+      midW += w;
+    } else midW += 60;
+    const sideW = {};
+    ['L', 'R'].forEach(k => {
+      let total = 0;
+      const ws = [];
+      for (const u of side[k].shown){
+        const [a, b] = unitSpan(u), w = segW(a, b);
+        if (total + w > 30000) break;
+        ws.push({ u, a, b, w }); total += w;
+      }
+      let x = k === 'L' ? total : 0;
+      ws.forEach(o => {
+        if (k === 'L') x -= o.w;
+        segs.push({ u: o.u, t0: o.a - pad, t1: o.b + pad, x, w: o.w, cv: k });
+        if (k === 'R') x += o.w;
+      });
+      sideW[k] = Math.max(1, total);
+      side[k].n = ws.length;
+    });
+
+    const sig = [W, big, H, ajSel.L, ajSel.R, dw, lim, winMs, galPadSel.value, galDynSel.value, galNormSel.value, ajPtsChk.checked, colormapSel.value,
+      target ? [target.o.t1, target.o.t2, target.o.f1, target.o.f2, target.o.fk, target.o.fmk].join(',') : '-',
+      segs.map(sg => sg.cv + sg.u.seq.fil + '@' + sg.u.o.t1).join('|'), ajMsg.L, ajMsg.R].join('#');
+    if (sig === ajSig){ ajHighlight(); return; }
+    ajSig = sig;
+    ajTiles = segs;
+    ajGeom = { fLo, fHi, H };
+
+    const setCv = (cv, w) => { cv.width = w; cv.height = H; cv.style.width = w + 'px'; cv.style.height = H + 'px'; };
+    setCv(ajCv.M, midW); setCv(ajCv.L, sideW.L); setCv(ajCv.R, sideW.R);
+    ['L', 'R'].forEach(k => {
+      ajInnerEl[k].style.width = sideW[k] + 'px';
+      ajCv[k].style.display = side[k].n ? 'block' : 'none';
+      ajLab[k].innerHTML = '';
+    });
+    document.getElementById('ajMidHead').style.width = midW + 'px';
+
+    // Ramar och etiketter
+    Object.values(ajWrap).forEach(w => w.querySelectorAll('.gal-fr').forEach(el => el.remove()));
+    const labs = { L: '', M: '', R: '' };
+    segs.forEach((sg, i) => {
+      const u = sg.u, d = u.v('dur'), fme = u.v('fme');
+      const clip = unitClipped(u) ? ' <span class="gal-clip" title="Överstyrd inspelning – FME kan vara fel">⚠</span>' : '';
+      let l1, l2, l3;
+      if (u.target){
+        l1 = '<b>Aktuell ' + (u.live ? 'puls (mäts)' : 'puls ' + u.nr) + '</b>';
+        l2 = esc(curSeq.fil);
+        l3 = 'Dur ' + d.toFixed(1) + ' ms';
+      } else {
+        const dd = d - td;
+        l1 = artDot(u.seq.meta.art) + '<b>' + esc(u.seq.meta.art || NO_ART) + '</b> ' + tagsHTML(u.seq.meta);
+        l2 = esc(u.seq.fil) + ' · #' + u.nr;
+        l3 = 'Dur ' + d.toFixed(1) + ' ms <span class="gal-d">Δ' + (Math.abs(dd) < 0.05 ? '0.0' : (dd > 0 ? '+' : '') + dd.toFixed(1)) + '</span>';
+      }
+      const l4 = 'FME ' + (fme != null ? fme.toFixed(1) : '–') + ' kHz' + clip;
+      const title = (u.target ? 'Aktuell puls' : (u.seq.meta.art || NO_ART)) + ' · ' + (u.target ? curSeq.fil : u.seq.fil) + ' · Dur ' + d.toFixed(1) + ' ms · FME ' + (fme != null ? fme.toFixed(1) : '–') + ' kHz';
+      labs[sg.cv] += '<div class="gal-lab2' + (u.target ? ' target' : '') + '" data-i="' + i + '" style="left:' + sg.x + 'px;width:' + sg.w + 'px" title="' + esc(title) + '">' +
+        '<div>' + l1 + '</div><div>' + l2 + '</div><div>' + l3 + '</div><div><button class="gal-play2" data-i="' + i + '" title="Spela upp i 1/10 hastighet">▶</button> ' + l4 + '</div></div>';
+      const fr = document.createElement('div');
+      fr.className = 'gal-fr' + (u.target ? ' target' : '');
+      fr.dataset.i = i;
+      fr.style.left = sg.x + 'px'; fr.style.width = sg.w + 'px'; fr.style.height = H + 'px';
+      fr.title = title;
+      ajWrap[sg.cv].appendChild(fr);
+    });
+    ['L', 'M', 'R'].forEach(k => { ajLab[k].innerHTML = labs[k]; ajLab[k].style.width = (k === 'M' ? midW : sideW[k]) + 'px'; });
+    ajLab.L.innerHTML = labs.L || (ajSel.L && target ? '<div class="aj-empty" style="text-align:right">inga pulser inom fönstret</div>' : '');
+    ajLab.R.innerHTML = labs.R || (ajSel.R && target ? '<div class="aj-empty">inga pulser inom fönstret</div>' : '');
+    ajScroll.L.scrollLeft = ajScroll.L.scrollWidth;
+    ajScroll.R.scrollLeft = 0;
+    ajHighlight();
+
+    // Bakgrund och frekvensaxel
+    const white = bgIsWhite();
+    const fy = f => H - (f - fLo) / (fHi - fLo) * H;
+    Object.values(ajCv).forEach(cv => { const c = cv.getContext('2d'); c.fillStyle = white ? '#ffffff' : '#0a1715'; c.fillRect(0, 0, cv.width, H); });
+    const cm = ajCv.M.getContext('2d');
+    cm.fillStyle = white ? '#f2f5f4' : '#0f1f1c'; cm.fillRect(0, 0, AJ_AXIS_W, H);
+    cm.font = '10px ' + getComputedStyle(document.body).fontFamily;
+    cm.fillStyle = white ? '#5b6b67' : '#7ea89b';
+    cm.textAlign = 'right'; cm.textBaseline = 'middle';
+    for (let f = Math.ceil(fLo / 10000) * 10000; f <= fHi; f += 10000){ const y = fy(f); if (y > 6 && y < H - 6) cm.fillText(String(f / 1000), AJ_AXIS_W - 5, y); }
+    cm.textAlign = 'center'; cm.textBaseline = 'top'; cm.fillText('kHz', AJ_AXIS_W / 2, 2);
+
+    const dyn = +galDynSel.value, shared = galNormSel.value === 'shared';
+    (async () => {
+      for (const sg of segs){
+        if (myTok !== ajToken) return;
+        const key = [sg.u.seq.fil, sg.t0.toFixed(6), sg.t1.toFixed(6), winMs, sg.w].join('|');
+        try{
+          let spec = galSpecCache.get(key);
+          if (!spec){
+            const { x: xs, sr } = await galSamples(sg.u.seq, sg.t0, sg.t1);
+            spec = galSpectrogram(xs, sr, winMs, sg.w * 2);
+            if (galSpecCache.size > 400) galSpecCache.clear();
+            galSpecCache.set(key, spec);
+          }
+          if (myTok !== ajToken) return;
+          sg.spec = spec;
+          if (!shared) ajDrawSeg(sg, spec.max, dyn);
+        }catch(e){ sg.err = e.message; ajDrawSeg(sg, 0, dyn); }
+        await new Promise(r => setTimeout(r, 0));
+      }
+      if (shared && myTok === ajToken){
+        const top = Math.max.apply(null, segs.filter(t => t.spec).map(t => t.spec.max).concat([-200]));
+        segs.forEach(sg => ajDrawSeg(sg, top, dyn));
+      }
+    })();
+  }
+  function ajDrawSeg(sg, top, dyn){
+    const { fLo, fHi, H } = ajGeom;
+    const ctx = ajCv[sg.cv].getContext('2d');
+    const W = sg.w, x0 = sg.x, white = bgIsWhite();
+    const fy = f => H - (f - fLo) / (fHi - fLo) * H;
+    ctx.fillStyle = white ? '#ffffff' : '#0a1715';
+    ctx.fillRect(x0, 0, W, H);
+    if (sg.spec){
+      const s = sg.spec, stops = COLORMAPS[colormapSel.value];
+      const img = ctx.createImageData(W, H);
+      const span = sg.t1 - sg.t0, binHz = s.sr / s.N;
+      for (let x = 0; x < W; x++){
+        const t = (x + 0.5) / W * span;
+        const fi = clamp(Math.round((t * s.sr - s.L / 2) / s.hop), 0, s.nFrames - 1);
+        const base = fi * s.nb;
+        for (let y = 0; y < H; y++){
+          const f = fLo + (1 - (y + 0.5) / H) * (fHi - fLo);
+          const k = Math.round(f / binHz);
+          const db = k >= 0 && k < s.nb ? s.data[base + k] : -200;
+          const [r, g, b] = mapColor((db - (top - dyn)) / dyn, stops);
+          const o = (y * W + x) * 4;
+          img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, x0, 0);
+    }
+    ctx.strokeStyle = white ? 'rgba(0,0,0,.12)' : 'rgba(255,255,255,.10)';
+    ctx.lineWidth = 1;
+    for (let f = Math.ceil(fLo / 10000) * 10000; f <= fHi; f += 10000){
+      const y = Math.round(fy(f)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + W, y); ctx.stroke();
+    }
+    if (sg.cv !== 'M'){
+      ctx.strokeStyle = white ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.35)';
+      const xe = (sg.cv === 'L' ? x0 + W : x0) + 0.5;
+      ctx.beginPath(); ctx.moveTo(xe, 0); ctx.lineTo(xe, 6); ctx.moveTo(xe, H - 6); ctx.lineTo(xe, H); ctx.stroke();
+    } else {
+      const pxMs = W / ((sg.t1 - sg.t0) * 1000);
+      ctx.strokeStyle = white ? 'rgba(0,0,0,.6)' : 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x0 + W - 5 - pxMs, H - 6); ctx.lineTo(x0 + W - 5, H - 6); ctx.stroke(); ctx.lineWidth = 1;
+    }
+    if (sg.err){
+      ctx.fillStyle = '#ff7a6b'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+      ctx.fillText('kunde inte läsa ljudet', x0 + W / 2, H / 2);
+    }
+    if (ajPtsChk.checked){
+      const p = sg.u.o;
+      const X = t => x0 + (t - sg.t0) / (sg.t1 - sg.t0) * W;
+      [['start', p.t1, p.f1], ['end', p.t2, p.f2], ['fk', p.tFk, p.fk], ['fmk', p.tFmk, p.fmk]].forEach(([k, t, f]) => {
+        if (t == null || f == null) return;
+        ctx.beginPath(); ctx.arc(X(t), fy(f), 2.8, 0, Math.PI * 2);
+        ctx.fillStyle = PULSE_COLORS[k]; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.stroke();
+      });
+      if (p.tFme != null && p.fme != null){
+        ctx.beginPath(); ctx.arc(X(p.tFme), fy(p.fme), 4.2, 0, Math.PI * 2);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.3; ctx.stroke(); ctx.lineWidth = 1;
+      }
+    }
+  }
+  function ajHighlight(){
+    const hl = highlightSet();
+    ajGrid.querySelectorAll('.gal-fr').forEach(el => {
+      const sg = ajTiles[+el.dataset.i];
+      el.classList.toggle('sel', !!sg && !sg.u.target && hl.has(sg.u.o));
+    });
+  }
+  ajGrid.addEventListener('click', e => {
+    const play = e.target.closest('.gal-play2');
+    if (play){ const sg = ajTiles[+play.dataset.i]; if (sg) playGalTile(sg); return; }
+    const el = e.target.closest('.gal-fr, .gal-lab2');
+    if (!el) return;
+    const sg = ajTiles[+el.dataset.i];
+    if (!sg) return;
+    if (!(sg.u.target && sg.u.live)) selectUnit(sg.u);
+  });
+  ['L', 'R'].forEach(k => ajArt[k].addEventListener('change', () => {
+    ajSel[k] = ajArt[k].value;
+    saveViewPrefs();
+    scheduleAj();
+    ajEnsureLoaded(k, ajSel[k]);
+  }));
+  ajDurW.addEventListener('input', () => { ajShowDur(); scheduleAj(); });
+  ajDurW.addEventListener('change', () => saveViewPrefs());
+  [ajNSel, ajPtsChk].forEach(el => el.addEventListener('change', () => { saveViewPrefs(); scheduleAj(); }));
+  ajShowDur();
+  ajReady = true;
+
   galReady = true;
 
   // ---------- vyinställningar sparas mellan sessioner ----------
@@ -6262,6 +6750,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
         clip: document.getElementById('clipSel').value,
         hulls: document.getElementById('hullChk').checked,
         bar: { sx: barPrefs.sx, sy: barPrefs.sy, arts: Array.from(barSel) },
+        aj: { durw: ajDurWin(), n: ajNSel.value, pts: ajPtsChk.checked, L: ajSel.L, R: ajSel.R },
         gal: { durw: galDurWin(), n: galNSel.value, win: galWinSel.value, pad: galPadSel.value, dyn: galDynSel.value, norm: galNormSel.value, pts: galPtsChk.checked } }));
     }catch(e){}
   }
@@ -6270,6 +6759,12 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
       const v = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null');
       if (v){
         if (paneEls[v.big]) bigPane = v.big;
+        if (v.aj){
+          if (v.aj.durw != null && isFinite(+v.aj.durw)) ajDurW.value = clamp(+v.aj.durw, 0.1, 5);
+          setSelVal(ajNSel, v.aj.n); ajPtsChk.checked = !!v.aj.pts;
+          ajSel.L = v.aj.L || ''; ajSel.R = v.aj.R || '';
+          ajShowDur();
+        }
         if (v.align) alignPulsePref = v.align;
         setSelVal(curveSel, v.curve);
         if (v.prefs){ ['pulse', 'strof'].forEach(k => { if (v.prefs[k]) Object.assign(unitPrefs[k], v.prefs[k]); }); }
