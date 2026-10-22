@@ -100,6 +100,10 @@
 
   .view{display:flex;flex-direction:column;gap:12px;min-width:0;}
   .canvas-wrap{display:flex;align-items:stretch;border:1px solid var(--border-soft);border-radius:10px;overflow:hidden;background:var(--bg-field);}
+  .osc-wrap{display:flex;align-items:stretch;border:1px solid var(--border-soft);border-radius:10px;overflow:hidden;background:var(--bg-field);margin-bottom:6px;}
+  .osc-wrap[hidden]{display:none;}
+  .osc-wrap canvas{display:block;flex:1 1 auto;min-width:0;}
+  .osc-pad{flex:0 0 auto;border-left:1px solid var(--border-soft);}
   .spec-stack{position:relative;flex:1;min-width:0;}
   canvas{display:block;width:100%;}
   #overlay{position:absolute;top:0;left:0;cursor:none;}
@@ -266,6 +270,10 @@
   .tag.social{border-color:#ff7ab6;color:#ffa6cf;}
   .sp-load{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft);display:flex;flex-direction:column;gap:10px;}
   .sp-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--text);}
+  .sp-groups{display:flex;flex-wrap:wrap;gap:6px 18px;margin:2px 0 8px;padding-bottom:8px;border-bottom:1px solid var(--border-soft);}
+  .sp-groups label{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);cursor:pointer;font-weight:600;}
+  .sp-groups input{accent-color:var(--accent);}
+  .sp-groups .cnt{color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:400;}
   .sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px;}
   .sp-grid label{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);cursor:pointer;padding:2px 0;}
   .sp-grid label.zero{color:var(--muted2);}
@@ -633,6 +641,7 @@
             <button class="btn ghost pane-big" data-pane="spec">⤢ Stor ruta</button>
           </div>
         </div>
+      <div class="osc-wrap" id="oscWrap" hidden><canvas id="oscCanvas"></canvas><div class="osc-pad" id="oscPad"></div></div>
       <div class="canvas-wrap" id="canvasWrap">
         <div class="spec-stack" id="specStack">
           <div class="empty-state" id="emptyState">
@@ -761,6 +770,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
         <div id="cmpList"></div>
         <div class="sp-load">
           <div class="sp-head"><b>Ladda hela arter från biblioteket</b><span class="hint" id="spInfo"></span></div>
+          <div class="sp-groups" id="spGroups"></div>
           <div class="sp-grid" id="spGrid"></div>
           <div class="headbtns">
             <button class="btn" id="spLoadBtn" disabled>Ladda valda arter</button>
@@ -1479,6 +1489,9 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
       c.style.width = w + 'px'; c.style.height = h + 'px';
     });
     plotArea = { x: 62, y: 14, w: w - 62 - 46, h: h - 14 - 34 };
+    oscCanvas.width = w; oscCanvas.height = OSC_H;
+    oscCanvas.style.width = w + 'px'; oscCanvas.style.height = OSC_H + 'px';
+    document.getElementById('oscPad').style.width = fw + 'px';
     fmeCanvas.width = fw; fmeCanvas.height = h;
     fmeCanvas.style.height = h + 'px';
   }
@@ -2601,6 +2614,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
 
   function render(){
     if (!currentSpec) return;
+    oscWrap.hidden = false;
     layoutCanvases();
     logScale = (freqScaleSel.value === 'log');
     const minF = getMinFreq();
@@ -2712,6 +2726,79 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     ctx.restore();
   }
 
+  // ---------- oscillogram ovanför spektrogrammet ----------
+  // Samma tidsaxel som spektrogrammet (följer zoom och panorering). Fast skala ±100 % av full
+  // nivå med stödlinjer vid ±50 %. För varje bildpunkt i sidled ritas högsta och lägsta
+  // ljudvärdet, så inga toppar missas. Överstyrda ljudvärden (platta toppar, se clippedSampleIdx)
+  // ritas röda. Markeringen eller pulsen du mäter skuggas.
+  const OSC_H = 90;
+  const oscWrap = document.getElementById('oscWrap');
+  const oscCanvas = document.getElementById('oscCanvas');
+  let oscCache = null;
+  function oscEnvelope(){
+    const x0 = plotArea.x, pw = Math.max(1, Math.round(plotArea.w));
+    const key = [monoData && monoData.length, sampleRate, viewStart, viewEnd, x0, pw].join('|');
+    if (oscCache && oscCache.key === key && oscCache.data === monoData) return oscCache;
+    const n = monoData.length, mins = new Float32Array(pw), maxs = new Float32Array(pw), clip = new Uint8Array(pw), has = new Uint8Array(pw);
+    const clipIdx = clippedSampleIdx();
+    const span = (viewEnd - viewStart) || 1;
+    let ci = 0;
+    for (let x = 0; x < pw; x++){
+      const a = Math.max(0, Math.floor((viewStart + x / pw * span) * sampleRate));
+      const b = Math.min(n, Math.max(a + 1, Math.floor((viewStart + (x + 1) / pw * span) * sampleRate)));
+      if (a >= n) continue;
+      let lo = Infinity, hi = -Infinity;
+      for (let i = a; i < b; i++){ const v = monoData[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+      mins[x] = lo; maxs[x] = hi; has[x] = 1;
+      while (ci < clipIdx.length && clipIdx[ci] < a) ci++;
+      if (ci < clipIdx.length && clipIdx[ci] < b) clip[x] = 1;
+    }
+    oscCache = { key, data: monoData, mins, maxs, clip, has, pw };
+    return oscCache;
+  }
+  function drawOsc(){
+    if (!currentSpec || !monoData || oscWrap.hidden) return;
+    const ctx = oscCanvas.getContext('2d');
+    const W = oscCanvas.width, H = OSC_H, white = bgIsWhite();
+    const x0 = plotArea.x, top = 6, bot = H - 6, mid = (top + bot) / 2, amp = (bot - top) / 2;
+    const yOf = v => mid - clamp(v, -1.05, 1.05) * amp;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = white ? '#ffffff' : '#0a1715';
+    ctx.fillRect(0, 0, W, H);
+    const env = oscEnvelope();
+    // skuggad markering / puls
+    const reg = getActiveRegion();
+    if (reg){
+      const xa = timeToX(Math.min(reg.t1, reg.t2)), xb = timeToX(Math.max(reg.t1, reg.t2));
+      ctx.fillStyle = white ? 'rgba(255,180,84,.22)' : 'rgba(255,180,84,.16)';
+      ctx.fillRect(xa, 0, Math.max(1, xb - xa), H);
+    }
+    // stödlinjer
+    ctx.lineWidth = 1;
+    [[1, .5], [-1, .5], [.5, .22], [-.5, .22], [0, .3]].forEach(([v, a]) => {
+      const y = Math.round(yOf(v)) + 0.5;
+      ctx.strokeStyle = white ? 'rgba(0,0,0,' + a + ')' : 'rgba(255,255,255,' + a * 0.6 + ')';
+      ctx.setLineDash(Math.abs(v) === 1 ? [] : [3, 3]);
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + env.pw, y); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    // vågform
+    const norm = white ? '#1f4a42' : '#7fd8c4', red = '#ff4d3d';
+    for (let x = 0; x < env.pw; x++){
+      if (!env.has[x]) continue;
+      const ya = yOf(env.maxs[x]), yb = yOf(env.mins[x]);
+      ctx.fillStyle = env.clip[x] ? red : norm;
+      ctx.fillRect(x0 + x, ya, 1, Math.max(1, yb - ya));
+    }
+    // skala
+    ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillStyle = white ? '#5b6b67' : '#7ea89b';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    [[1, '100 %'], [.5, '50 %'], [0, '0'], [-.5, '−50 %'], [-1, '−100 %']].forEach(([v, t]) => ctx.fillText(t, x0 - 6, clamp(yOf(v), 6, H - 6)));
+    ctx.textAlign = 'left';
+    if (env.clip.some(c => c)){ ctx.fillStyle = red; ctx.fillText('överstyrt', x0 + env.pw + 4, 10); }
+  }
+
   function drawColorbar(dbMin, dbMax, stops){
     const ctx = specCtx;
     const bx = plotArea.x + plotArea.w + 14;
@@ -2738,6 +2825,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
   // ---------- overlay: hårkors, markering, puls, playhead ----------
   function redrawOverlay(){
     syncPulsePointButtons();
+    drawOsc();
     updateMeasFloat();
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     if (toolMode === 'range' && selection){
@@ -4413,8 +4501,35 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     libEntries.forEach(e => { if (e.seq){ const a = libArtOf(e); counts.set(a, (counts.get(a) || 0) + 1); } });
     return counts;
   }
+  // Artgrupper: kryssa en grupp för att välja (eller avmarkera) alla dess arter på en gång.
+  const SP_GROUPS = [
+    ['Myotis', ['Mustasch-/tajgafladdermus', 'Mustaschfladdermus', 'Tajgafladdermus', 'Vattenfladdermus', 'Dammfladdermus', 'Fransfladdermus', 'Bechsteins fladdermus', 'Större musöra']],
+    ['Nyctaloider', ['Större brunfladdermus', 'Mindre brunfladdermus', 'Gråskimlig fladdermus', 'Sydfladdermus', 'Nordfladdermus']],
+    ['Pipistreller', ['Dvärgpipistrell', 'Trollpipistrell', 'Sydpipistrell']]
+  ];
+  const spGroupsEl = document.getElementById('spGroups');
+  function renderSpGroups(counts){
+    spGroupsEl.innerHTML = SP_GROUPS.map(([g, arts], i) => {
+      const n = arts.filter(a => spSel.has(a)).length;
+      const tot = counts ? arts.reduce((s, a) => s + (counts.get(a) || 0), 0) : null;
+      return '<label title="' + esc(arts.join(', ')) + '"><input type="checkbox" data-grp="' + i + '"' + (n === arts.length ? ' checked' : '') + '>' + esc(g) +
+        (tot != null ? ' <span class="cnt">' + tot + '</span>' : '') + '</label>';
+    }).join('');
+    spGroupsEl.querySelectorAll('input').forEach(inp => {
+      const arts = SP_GROUPS[+inp.dataset.grp][1], n = arts.filter(a => spSel.has(a)).length;
+      inp.indeterminate = n > 0 && n < arts.length;
+    });
+  }
+  spGroupsEl.addEventListener('change', e => {
+    const i = e.target.dataset ? e.target.dataset.grp : null;
+    if (i == null) return;
+    const arts = SP_GROUPS[+i][1];
+    if (e.target.checked) arts.forEach(a => spSel.add(a)); else arts.forEach(a => spSel.delete(a));
+    renderSpGrid();
+  });
   function renderSpGrid(){
     const counts = libScanned ? libArtCounts() : null;
+    renderSpGroups(counts);
     const names = SPECIES.map(s => s[0]);
     if (counts) counts.forEach((n, a) => { if (!names.includes(a)) names.push(a); });
     names.sort((a, b) => a === NO_ART ? 1 : b === NO_ART ? -1 : a.localeCompare(b, 'sv'));
@@ -4431,6 +4546,7 @@ Strofer: Ctrl/⌘-klicka eller Shift-klicka för att markera flera pulser och tr
     if (a == null) return;
     if (e.target.checked) spSel.add(a); else spSel.delete(a);
     spLoadBtn.disabled = !spSel.size;
+    renderSpGroups(libScanned ? libArtCounts() : null);
   });
   document.getElementById('spNoneBtn').addEventListener('click', () => { spSel.clear(); renderSpGrid(); });
   spLoadBtn.addEventListener('click', async () => {
